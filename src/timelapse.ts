@@ -1,16 +1,18 @@
 // Copyright (c) Wictor Wilén. All rights reserved. 
 // Licensed under the MIT license.
 
-import { writeFileSync, rmSync, existsSync, readdirSync, lstatSync } from 'fs';
+import { writeFileSync, rmSync, existsSync, readdirSync, lstatSync, renameSync, mkdirSync } from 'fs';
 import * as path from 'path'
 import FfmpegCommand from 'fluent-ffmpeg';
+
+const log = console.log;
 
 async function timelapse() {
 
     const folders = readdirSync(path.resolve(__dirname, "target"));
     folders.forEach(f => {
-        if (lstatSync(path.resolve(__dirname, "target", f)).isDirectory()) {
-            console.log(f);
+        if (lstatSync(path.resolve(__dirname, "target", f)).isDirectory() && f != "archive") {
+            log(f);
             const files = readdirSync(path.resolve(__dirname, "target", f));
 
             if (files.length > 0) {
@@ -23,17 +25,25 @@ async function timelapse() {
 
 
                 command.on('error', (err) => {
-                    console.log('An error occurred: ' + err.message);
+                    log('An error occurred: ' + err.message);
                 });
 
                 // Cleanup commands once timelapse is done
                 command.on('end', () => {
-                    console.log('Merging finished, removing snapshot images!');
+                    log('Merging finished, archiving snapshot images!');
+                    if (!existsSync(path.resolve(__dirname, "target", "archive"))) {
+                        log("creating archive");
+                        mkdirSync(path.resolve(__dirname, "target", "archive"));
+                    }
+                    if (!existsSync(path.resolve(__dirname, "target", "archive", f))) {
+                        log("creating camera directory");
+                        mkdirSync(path.resolve(__dirname, "target", f));
+                    }
                     for (const file of files) {
-                        rmSync(path.resolve(__dirname, "target", f, file));
+                        renameSync(path.resolve(__dirname, "target", f, file), path.resolve(__dirname, "target", "archive", f, file))
                     }
                     rmSync(templateFilePath);
-                    console.log("Done!");
+                    log("Done!");
                 });
 
                 // add all the image files
@@ -41,7 +51,7 @@ async function timelapse() {
                     return lstatSync(path.resolve(__dirname, "target", f, a)).mtimeMs -
                         lstatSync(path.resolve(__dirname, "target", f, b)).mtimeMs;
                 })) {
-                    console.log(`Adding ${file}`);
+                    log(`Adding ${file}`);
                     template += `file ${path.resolve(__dirname, "target", f, file)}\n`;
                 }
 
