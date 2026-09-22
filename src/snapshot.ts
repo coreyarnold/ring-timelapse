@@ -6,6 +6,8 @@ import { RingApi } from 'ring-client-api'
 import * as path from 'path'
 import * as dotenv from "dotenv";
 import * as lodash from "lodash";
+import { readFile, writeFile } from 'fs'
+import { promisify } from 'util'
 
 const log = console.log;
 
@@ -16,6 +18,32 @@ const snapshot = async (): Promise<void> => {
         refreshToken: process.env.TOKEN as string,
         debug: true // false
     });
+    
+    ringApi.onRefreshTokenUpdated.subscribe(
+        async ({ newRefreshToken, oldRefreshToken }) => {
+            log('Refresh Token Updated: ', newRefreshToken)
+            if ((process.env.TOKEN as string) != newRefreshToken) {
+                log('Token values differ, updating process.env')
+                process.env.TOKEN = newRefreshToken
+                
+                if (existsSync(path.resolve(__dirname, "target", ".env"))) {
+                    log('Updating .env file since refresh token has changed')
+                    const currentConfig = await promisify(readFile)(path.resolve(__dirname, "target", ".env")),
+                    updatedConfig = currentConfig
+                    .toString()
+                    .replace((process.env.TOKEN as string), newRefreshToken)
+                    
+                    await promisify(writeFile)(path.resolve(__dirname, "target", ".env"), updatedConfig)
+                }
+            }
+            
+            // If you are implementing a project that use `ring-client-api`, you should subscribe to onRefreshTokenUpdated and update your config each time it fires an event
+            // Here is an example using a .env file for configuration
+            if (!oldRefreshToken) {
+                return
+            }
+        }
+    )
 
     const cameras = await ringApi.getCameras();
 
