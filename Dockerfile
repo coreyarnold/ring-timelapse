@@ -37,8 +37,8 @@ COPY --from=BUILD_IMAGE /work/node_modules ./node_modules
 COPY --from=BUILD_IMAGE /work/package.json .
 
 # Setup the cron job to 
-RUN echo "$CRON_SCHEDULE cd /app && npm run snapshot" >> /etc/crontabs/root
-RUN echo "$CRON_SCHEDULE_TIMELAPSE cd /app && npm run timelapse" >> /etc/crontabs/root
+RUN echo "$CRON_SCHEDULE cd /app && npm run snapshot >> /proc/1/fd/1 2>&1" >> /etc/crontabs/root
+RUN echo "$CRON_SCHEDULE_TIMELAPSE cd /app && npm run timelapse >> /proc/1/fd/1 2>&1" >> /etc/crontabs/root
 
 # Create the cron log
 RUN touch /var/log/cron.log

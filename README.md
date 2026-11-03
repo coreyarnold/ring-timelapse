@@ -62,6 +62,14 @@ The following variables are optional:
 
 `CRON_SCHEDULE_TIMELAPSE` - Schedule for generating the timelapse video. Default: `0 7 * * *`
 
+`NEW_RELIC_ACCOUNT_ID` and `NEW_RELIC_LICENSE_KEY` - when both are set, every snapshot run sends a `RingTimelapseSnapshot` custom event to New Relic with a `status` of `success` or `failure` (plus `error`, `cameras` and `snapshotsSaved`). The key must be an ingest license key.
+
+`NEW_RELIC_REGION` - set to `EU` if your New Relic account is in the EU region.
+
+## Refresh token
+
+Ring rotates the refresh token as it is used. The latest token is saved to `.ring-token.json` in the mounted target directory, so it survives container restarts. If you generate a new token and change `TOKEN`, the new value takes precedence over the saved one.
+
 ## Authors
 
 - [@wictorwilen](https://www.github.com/wictorwilen)
